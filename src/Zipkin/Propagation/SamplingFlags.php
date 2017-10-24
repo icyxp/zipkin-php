@@ -5,7 +5,7 @@ namespace Zipkin\Propagation;
 interface SamplingFlags
 {
     /**
-     * @return bool
+     * @return bool|null
      */
     public function isSampled();
 
@@ -13,4 +13,9 @@ interface SamplingFlags
      * @return bool
      */
     public function isDebug();
+
+    /**
+     * @return bool
+     */
+    public function isEmpty();
 }

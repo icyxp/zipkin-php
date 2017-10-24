@@ -2,6 +2,7 @@
 
 namespace Zipkin;
 
+use AssertionError;
 use Zipkin\Propagation\DefaultSamplingFlags;
 use Zipkin\Propagation\SamplingFlags;
 use Zipkin\Sampler;
@@ -22,6 +23,11 @@ final class Tracer
      * @var Recorder
      */
     private $recorder;
+
+    /**
+     * @var CurrentTraceContext
+     */
+    private $currentTraceContext;
 
     /**
      * @param Endpoint $localEndpoint
@@ -77,14 +83,11 @@ final class Tracer
      *
      * @param TraceContext $parent
      * @return Span
+     * @throws \LogicException
      */
     public function newChild(TraceContext $parent)
     {
-        if ($parent->isSampled()) {
-            return $this->ensureSampled($this->nextContext($parent));
-        }
-
-        return NoopSpan::create($parent);
+        return $this->nextSpan($parent);
     }
 
     /**
@@ -112,6 +115,69 @@ final class Tracer
     public function joinSpan(TraceContext $context)
     {
         return $this->toSpan($context);
+    }
+
+    /**
+     * Returns the current span in scope or null if there isn't one.
+     *
+     * @return Span|null
+     */
+    public function currentSpan() {
+        return $this->currentTraceContext->get() === null ? null : $this->toSpan($this->currentTraceContext->get());
+    }
+
+    /**
+     * This creates a new span based on parameters extracted from an incoming request. This will
+     * always result in a new span. If no trace identifiers were extracted, a span will be created
+     * based on the implicit context in the same manner as {@link #nextSpan()}.
+     *
+     * <p>Ex.
+     * <pre>{@code
+     * extracted = extractor.extract(request);
+     * span = tracer.nextSpan(extracted);
+     * }</pre>
+     *
+     * <p><em>Note:</em> Unlike {@link #joinSpan(TraceContext)}, this does not attempt to re-use
+     * extracted span IDs. This means the extracted context (if any) is the parent of the span
+     * returned.
+     *
+     * <p><em>Note:</em> If a context could be extracted from the input, that trace is resumed, not
+     * whatever the {@link #currentSpan()} was. Make sure you re-apply {@link #withSpanInScope(Span)}
+     * so that data is written to the correct trace.
+     *
+     * @see Propagation
+     * @see Extractor#extract(Object)
+     *
+     * @param SamplingFlags|null $extracted
+     * @return Span
+     * @throws \LogicException
+     */
+    public function nextSpan(SamplingFlags $extracted = null) {
+        if ($extracted === null) {
+            return $this->currentTraceContext->get() === null ? $this->newTrace() : $this->newChild($this->currentTraceContext->get());
+        }
+
+        $parent = $extracted;
+
+        if (!$extracted->isEmpty()) {
+            $implicitParent = $this->currentTraceContext->get();
+            if ($implicitParent === null) {
+                return $this->toSpan($this->newRootContext($extracted, $extracted->getExtra()));
+            }
+
+            $parent = $this->appendExtra($implicitParent, $extracted->getExtra());
+        }
+
+        if ($parent !== null) {
+            return $this->toSpan(TraceContext::createFromParent($extracted));
+        }
+
+        throw new \LogicException('should not reach here');
+    }
+
+    private function newRootContext(SamplingFlags $samplingFlags, array $extra)
+    {
+        TraceContext::createAsRoot($samplingFlags, $extra);
     }
 
     /**

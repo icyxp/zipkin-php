@@ -88,4 +88,12 @@ final class DefaultSamplingFlags implements SamplingFlags
     {
         return $this->debug;
     }
+
+    /**
+     * @return bool
+     */
+    public function isEmpty()
+    {
+        return $this->sampled === null && $this->debug === false;
+    }
 }
