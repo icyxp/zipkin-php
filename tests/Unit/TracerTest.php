@@ -6,12 +6,14 @@ use PHPUnit_Framework_TestCase;
 use Prophecy\Prophecy\ObjectProphecy;
 use Zipkin\Endpoint;
 use Zipkin\NoopSpan;
+use Zipkin\Propagation\CurrentTraceContext;
 use Zipkin\Propagation\DefaultSamplingFlags;
+use Zipkin\Propagation\SamplingFlags;
 use Zipkin\RealSpan;
 use Zipkin\Reporter;
 use Zipkin\Sampler;
 use Zipkin\Samplers\BinarySampler;
-use Zipkin\TraceContext;
+use Zipkin\Propagation\TraceContext;
 use Zipkin\Tracer;
 
 final class TracerTest extends PHPUnit_Framework_TestCase
@@ -26,10 +28,16 @@ final class TracerTest extends PHPUnit_Framework_TestCase
      */
     private $sampler;
 
+    /**
+     * @var CurrentTraceContext
+     */
+    private $currentTracerContext;
+
     public function setUp()
     {
         $this->reporter = $this->prophesize(Reporter::class);
         $this->sampler = $this->prophesize(Sampler::class);
+        $this->currentTracerContext = CurrentTraceContext::create();
     }
 
     public function testNewTraceSuccess()
@@ -38,6 +46,7 @@ final class TracerTest extends PHPUnit_Framework_TestCase
             Endpoint::createAsEmpty(),
             $this->reporter->reveal(),
             $this->sampler->reveal(),
+            $this->currentTracerContext,
             false
         );
 
@@ -57,6 +66,7 @@ final class TracerTest extends PHPUnit_Framework_TestCase
             Endpoint::createAsEmpty(),
             $this->reporter->reveal(),
             $this->sampler->reveal(),
+            $this->currentTracerContext,
             false
         );
 
@@ -75,6 +85,7 @@ final class TracerTest extends PHPUnit_Framework_TestCase
             Endpoint::createAsEmpty(),
             $this->reporter->reveal(),
             $this->sampler->reveal(),
+            $this->currentTracerContext,
             false
         );
 
@@ -93,6 +104,7 @@ final class TracerTest extends PHPUnit_Framework_TestCase
             Endpoint::createAsEmpty(),
             $this->reporter->reveal(),
             BinarySampler::createAsAlwaysSample(),
+            $this->currentTracerContext,
             false
         );
 
@@ -106,10 +118,110 @@ final class TracerTest extends PHPUnit_Framework_TestCase
             Endpoint::createAsEmpty(),
             $this->reporter->reveal(),
             BinarySampler::createAsNeverSample(),
+            $this->currentTracerContext,
             false
         );
 
         $span = $tracer->newTrace(DefaultSamplingFlags::createAsEmpty());
         $this->assertFalse($span->getContext()->isSampled());
+    }
+
+    public function testNextSpanIsCreatedFromCurrentTraceContext()
+    {
+        $context = TraceContext::createAsRoot();
+
+        $this->currentTracerContext->createScopeAndRetrieveItsCloser($context);
+
+        $tracer = new Tracer(
+            Endpoint::createAsEmpty(),
+            $this->reporter->reveal(),
+            BinarySampler::createAsNeverSample(),
+            $this->currentTracerContext,
+            false
+        );
+
+        $span = $tracer->nextSpan();
+
+        $this->assertContextParentOf($context, $span->getContext());
+    }
+
+    public function testNextSpanIsCreatedFromContext()
+    {
+        $context = TraceContext::createAsRoot();
+
+        $tracer = new Tracer(
+            Endpoint::createAsEmpty(),
+            $this->reporter->reveal(),
+            BinarySampler::createAsNeverSample(),
+            $this->currentTracerContext,
+            false
+        );
+
+        $span = $tracer->nextSpan($context);
+        $this->assertContextParentOf($context, $span->getContext());
+    }
+
+    /**
+     * @dataProvider samplingFlagsDataProvider
+     */
+    public function testNextSpanIsCreatedFromSamplingFlags($sampled, $debug)
+    {
+        $samplingFlags = DefaultSamplingFlags::create($sampled, $debug);
+
+        $tracer = new Tracer(
+            Endpoint::createAsEmpty(),
+            $this->reporter->reveal(),
+            BinarySampler::createAsNeverSample(),
+            $this->currentTracerContext,
+            false
+        );
+
+        $span = $tracer->nextSpan($samplingFlags);
+
+        $this->assertSameSamplingFlags($samplingFlags, $span->getContext());
+    }
+
+    public function samplingFlagsDataProvider()
+    {
+        return [
+            [ null, true ],
+            [ null, false ],
+            [ true, true ],
+            [ true, false ],
+            [ false, true ],
+            [ false, false ],
+        ];
+    }
+
+    private function assertSameSamplingFlags(SamplingFlags $samplingFlags1, SamplingFlags $samplingFlags2)
+    {
+        $this->assertEquals($samplingFlags1->isSampled(), $samplingFlags2->isSampled());
+        $this->assertEquals($samplingFlags1->isDebug(), $samplingFlags2->isDebug());
+    }
+
+    private function assertContextParentOf(TraceContext $parentContext, TraceContext $childContext)
+    {
+        $this->assertEquals($parentContext->getTraceId(), $childContext->getTraceId());
+        $this->assertEquals($parentContext->getSpanId(), $childContext->getParentId());
+        $this->assertEquals($parentContext->isDebug(), $childContext->isDebug());
+        $this->assertEquals($parentContext->isSampled(), $childContext->isSampled());
+    }
+
+    public function testSetSpanInScope()
+    {
+        $context = TraceContext::createAsRoot();
+        $this->currentTracerContext->createScopeAndRetrieveItsCloser($context);
+
+        $tracer = new Tracer(
+            Endpoint::createAsEmpty(),
+            $this->reporter->reveal(),
+            BinarySampler::createAsNeverSample(),
+            $this->currentTracerContext,
+            false
+        );
+
+        $currentSpan = $tracer->getCurrentSpan();
+
+        $this->assertEquals($context, $currentSpan->getContext());
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Zipkin;
+namespace Zipkin\Propagation;
 
 use InvalidArgumentException;
 use Zipkin\Propagation\DefaultSamplingFlags;
@@ -183,5 +183,14 @@ final class TraceContext implements SamplingFlags
     private static function isValidSpanId($value)
     {
         return ctype_xdigit((string) $value) && strlen((string) $value) === 16;
+    }
+
+    /**
+     * @param SamplingFlags $samplingFlags
+     * @return bool
+     */
+    public function isEqual(SamplingFlags $samplingFlags)
+    {
+        // TODO: Implement isEqual() method.
     }
 }

@@ -3,6 +3,7 @@
 namespace Zipkin;
 
 use Psr\Log\NullLogger;
+use Zipkin\Propagation\CurrentTraceContext;
 use Zipkin\Reporters\Logging;
 use Zipkin\Samplers\BinarySampler;
 
@@ -32,6 +33,11 @@ class TracingBuilder
      * @var bool
      */
     private $traceId128bits = false;
+
+    /**
+     * @var CurrentTraceContext
+     */
+    private $currentTraceContext;
 
     public static function create()
     {
@@ -112,6 +118,12 @@ class TracingBuilder
         return $this;
     }
 
+    public function havingCurrentTraceContext(CurrentTraceContext $currentTraceContext)
+    {
+        $this->currentTraceContext = $currentTraceContext;
+        return $this;
+    }
+
     /**
      * @return DefaultTracing
      */
@@ -136,7 +148,8 @@ class TracingBuilder
             $this->localEndpoint,
             $this->reporter,
             $this->sampler,
-            $this->traceId128bits
+            $this->traceId128bits,
+            $this->currentTraceContext
         );
     }
 }
