@@ -1,9 +1,9 @@
 # Zipkin instrumentation for PHP
 
-[![Build Status](https://travis-ci.org/jcchavezs/zipkin-php.svg?branch=master)](https://travis-ci.org/jcchavezs/zipkin-php)
+[![Build Status](https://travis-ci.org/icyxp/zipkin-php.svg?branch=master)](https://travis-ci.org/jcchavezs/zipkin-php)
 [![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%205.6-8892BF.svg)](https://php.net/)
-[![Total Downloads](https://poser.pugx.org/jcchavezs/zipkin/downloads)](https://packagist.org/packages/jcchavezs/zipkin)
-[![License](https://img.shields.io/packagist/l/jcchavezs/zipkin.svg)](https://github.com/jcchavezs/zipkin-php/blob/master/LICENSE)
+[![Total Downloads](https://poser.pugx.org/icyboy/zipkin/downloads)](https://packagist.org/packages/jcchavezs/zipkin)
+[![License](https://img.shields.io/packagist/l/jcchavezs/zipkin.svg)](https://github.com/icyxp/zipkin-php/blob/master/LICENSE)
 
 This is a **production ready** PHP library for Zipkin.
 
@@ -13,27 +13,31 @@ example, check [this repository](https://github.com/openzipkin/zipkin-php-exampl
 ## Installation
 
 ```bash
-composer require jcchavezs/zipkin
+composer require icyboy/zipkin
 ```
 
 ## Setup
 
 ```php
 use GuzzleHttp\Client;
-use Zipkin\Annotation;
+use Zipkin\Annotations;
 use Zipkin\Endpoint;
 use Zipkin\Samplers\BinarySampler;
+use Zipkin\Timestamp;
 use Zipkin\TracingBuilder;
 use Zipkin\Reporters\HttpLogging;
+use Symfony\Component\HttpFoundation\Request;
 
-$endpoint = Endpoint::createFromGlobals();
+$request  = Request::createFromGlobals();
+
+$endpoint = Endpoint::create('server_name', 'server_ipv4', 'server_ipv6', 'server_ipv4');
 $client = new Client();
 
 // Logger to stdout
 $logger = new \Monolog\Logger('log');
 $logger->pushHandler(new \Monolog\Handler\ErrorLogHandler());
 
-$reporter = new HttpLogging($client, $logger);
+$reporter = new HttpLogging($client, $logger, ["host"=>"zipkin_server_address"]);
 $sampler = BinarySampler::createAsAlwaysSample();
 $tracing = TracingBuilder::create()
     ->havingLocalEndpoint($endpoint)
@@ -43,9 +47,44 @@ $tracing = TracingBuilder::create()
 
 $tracer = $tracing->getTracer();
 
-...
+//get request header
+$carrier  = array_map(function ($header) {
+    return $header[0];
+}, $request->headers->all());
 
-$tracer->flush();
+//get X─B3─xxx from headers if existed or auto generate
+$extractor    = $tracing->getPropagation()->getExtractor(new \Zipkin\Propagation\Map());
+$traceContext = $extractor(new ArrayObject($carrier));
+$span         = $tracer->newTrace($traceContext);
+$span->start();
+
+//get request parameters
+$content = $request->getContent();
+$data = json_decode($content, true);
+if (is_array($data)) {
+    $output = $data;
+} elseif (!empty($content)) {
+    parse_str($content, $output);
+}
+
+if (!empty($output) && is_array($output)) {
+    foreach ($output as $k => $v) {
+        $value = is_array($v) ? json_encode($v) : $v;
+        $span->tag($k, $value);
+    }
+}
+
+//set name
+$span->setName(sprintf("%s %s", $request->getMethod(), $request->server->get("REQUEST_URI")));
+
+//set Annotation
+$span->annotate(Annotations\SERVER_RECV, Timestamp\now());
+$span->finish(Timestamp\now());
+
+//push info to zipkin server befor close program
+register_shutdown_function(function () use ($tracer) {
+    $tracer->flush();
+});
 ```
 
 ## Tracing
@@ -115,8 +154,8 @@ $span->setRemoteEndpoint(Remote::create('backend', 127 << 24 | 1, null, 8080);
 $span->start();
 
 // if you have callbacks for when data is on the wire, note those events
-$span->annotate(Annotation\WIRE_SEND);
-$span->annotate(Annotation\WIRE_RECV);
+$span->annotate(Annotations\SERVER_SEND);
+$span->annotate(Annotations\SERVER_RECV);
 
 // when the response is complete, finish the span
 $span->finish();

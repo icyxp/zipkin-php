@@ -1,12 +1,12 @@
 {
-    "name": "jcchavezs/zipkin",
+    "name": "icyboy/zipkin",
     "description": "A Zipkin instrumentation for PHP",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "José Carlos Chávez",
-            "email": "jcchavezs@gmail.com"
+            "name": "icyboy",
+            "email": "icyboy@me.com"
         }
     ],
     "minimum-stability": "stable",

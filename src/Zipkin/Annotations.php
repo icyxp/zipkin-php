@@ -2,5 +2,7 @@
 
 namespace Zipkin\Annotations;
 
-const WIRE_SEND = 'ws';
-const WIRE_RECV = 'wr';
+const SERVER_SEND = 'ss';
+const SERVER_RECV = 'sr';
+const CLIENT_SEND = 'cs';
+const CLIENT_RECV = 'cr';
