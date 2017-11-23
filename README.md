@@ -1,8 +1,8 @@
 # Zipkin instrumentation for PHP
 
-[![Build Status](https://travis-ci.org/icyxp/zipkin-php.svg?branch=master)](https://travis-ci.org/jcchavezs/zipkin-php)
+[![Build Status](https://travis-ci.org/icyxp/zipkin-php.svg?branch=master)](https://travis-ci.org/icyxp/zipkin-php)
 [![Minimum PHP Version](https://img.shields.io/badge/php-%3E%3D%205.6-8892BF.svg)](https://php.net/)
-[![Total Downloads](https://poser.pugx.org/icyboy/zipkin/downloads)](https://packagist.org/packages/jcchavezs/zipkin)
+[![Total Downloads](https://poser.pugx.org/icyboy/zipkin/downloads)](https://packagist.org/packages/icyboy/zipkin)
 [![License](https://img.shields.io/packagist/l/jcchavezs/zipkin.svg)](https://github.com/icyxp/zipkin-php/blob/master/LICENSE)
 
 This is a **production ready** PHP library for Zipkin.
