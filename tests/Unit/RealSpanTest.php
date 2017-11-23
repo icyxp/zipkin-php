@@ -57,7 +57,7 @@ class RealSpanTest extends PHPUnit_Framework_TestCase
     public function testAnnotateSuccess()
     {
         $timestamp = Timestamp\now();
-        $value = Annotations\WIRE_SEND;
+        $value = Annotations\SERVER_SEND;
         $context = TraceContext::createAsRoot();
         $recorder = $this->prophesize(Recorder::class);
         $recorder->annotate($context, $timestamp, $value)->shouldBeCalled();
