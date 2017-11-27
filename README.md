@@ -45,16 +45,18 @@ $tracing = TracingBuilder::create()
     ->havingReporter($reporter)
     ->build();
 
-$tracer = $tracing->getTracer();
-
 //get request header
 $carrier  = array_map(function ($header) {
     return $header[0];
 }, $request->headers->all());
 
+/* Extracts the context from the HTTP headers */
 //get X─B3─xxx from headers if existed or auto generate
 $extractor    = $tracing->getPropagation()->getExtractor(new \Zipkin\Propagation\Map());
-$traceContext = $extractor(new ArrayObject($carrier));
+$traceContext = $extractor($carrier);
+
+//create new trace
+$tracer       = $tracing->getTracer();
 $span         = $tracer->newTrace($traceContext);
 $span->start();
 
