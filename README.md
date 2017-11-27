@@ -26,6 +26,8 @@ use Zipkin\Samplers\BinarySampler;
 use Zipkin\Timestamp;
 use Zipkin\TracingBuilder;
 use Zipkin\Reporters\HttpLogging;
+use Zipkin\Propagation\Map;
+use Zipkin\Propagation\DefaultSamplingFlags;
 use Symfony\Component\HttpFoundation\Request;
 
 $request  = Request::createFromGlobals();
@@ -45,6 +47,25 @@ $tracing = TracingBuilder::create()
     ->havingReporter($reporter)
     ->build();
 
+/***** this for client *****/
+/* Always sample traces */
+//$defaultSamplingFlags = DefaultSamplingFlags::createAsSampled();
+/* Creates the main span */
+//$span = $tracer->newTrace($defaultSamplingFlags);
+/* Creates the span for getting the users list */
+//$childSpan = $tracer->newChild($span->getContext());
+//$childSpan->start();
+//$childSpan->setName('users:get_list');
+//$headers = [];
+/* Injects the context into the wire */
+//$injector = $tracing->getPropagation()->getInjector(new Map());
+//$injector($childSpan->getContext(), $headers);
+/* HTTP Request to the backend */
+//$httpClient = new Client();
+//$request = new \GuzzleHttp\Psr7\Request('POST', 'localhost:9000', $headers);
+//$response = $httpClient->send($request);
+
+
 //get request header
 $carrier  = array_map(function ($header) {
     return $header[0];
@@ -52,12 +73,12 @@ $carrier  = array_map(function ($header) {
 
 /* Extracts the context from the HTTP headers */
 //get X─B3─xxx from headers if existed or auto generate
-$extractor    = $tracing->getPropagation()->getExtractor(new \Zipkin\Propagation\Map());
+$extractor    = $tracing->getPropagation()->getExtractor(new Map());
 $traceContext = $extractor($carrier);
 
-//create new trace
+//create trace
 $tracer       = $tracing->getTracer();
-$span         = $tracer->newTrace($traceContext);
+$span         = $tracer->newChild($traceContext);
 $span->start();
 
 //get request parameters
