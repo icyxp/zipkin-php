@@ -108,6 +108,10 @@ final class B3 implements Propagation
                 return DefaultSamplingFlags::createAsEmpty();
             }
 
+            if ($isSampled === null && $isDebug === null) {
+                return DefaultSamplingFlags::createAsEmpty();
+            }
+
             $spanId = $getter->get($carrier, self::SPAN_ID_NAME);
 
             if ($spanId === null) {

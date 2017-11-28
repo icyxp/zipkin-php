@@ -73,9 +73,9 @@ final class TraceContext implements SamplingFlags
             throw new InvalidArgumentException(sprintf('Invalid trace id, got %s', $traceId));
         }
 
-        if (!self::isValidSpanId($parentId)) {
-            throw new InvalidArgumentException(sprintf('Invalid parent span id, got %s', $parentId));
-        }
+//        if (!self::isValidSpanId($parentId)) {
+//            throw new InvalidArgumentException(sprintf('Invalid parent span id, got %s', $parentId));
+//        }
 
         return new self($traceId, $spanId, $parentId, $isSampled, $isDebug, $usesTraceId128bits);
     }
