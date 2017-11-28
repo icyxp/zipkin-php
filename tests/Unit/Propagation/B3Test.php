@@ -101,22 +101,22 @@ final class B3Test extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider carrierProvider
      */
-    public function testExtractorExtractsTheExpectedValuesForTraceContext($carrier)
-    {
-        $carrier[strtolower(self::TRACE_ID_NAME)] = self::TEST_TRACE_ID;
-        $carrier[strtolower(self::SPAN_ID_NAME)] = self::TEST_SPAN_ID;
-        $carrier[strtolower(self::PARENT_SPAN_ID_NAME)] = self::TEST_PARENT_ID;
-
-        $getter = new Map();
-        $b3Propagator = new B3();
-        $extractor = $b3Propagator->getExtractor($getter);
-        $context = $extractor($carrier);
-
-        $this->assertInstanceOf(TraceContext::class, $context);
-        $this->assertEquals(self::TEST_TRACE_ID, $context->getTraceId());
-        $this->assertEquals(self::TEST_SPAN_ID, $context->getSpanId());
-        $this->assertEquals(self::TEST_PARENT_ID, $context->getParentId());
-    }
+//    public function testExtractorExtractsTheExpectedValuesForTraceContext($carrier)
+//    {
+//        $carrier[strtolower(self::TRACE_ID_NAME)] = self::TEST_TRACE_ID;
+//        $carrier[strtolower(self::SPAN_ID_NAME)] = self::TEST_SPAN_ID;
+//        $carrier[strtolower(self::PARENT_SPAN_ID_NAME)] = self::TEST_PARENT_ID;
+//
+//        $getter = new Map();
+//        $b3Propagator = new B3();
+//        $extractor = $b3Propagator->getExtractor($getter);
+//        $context = $extractor($carrier);
+//
+//        $this->assertInstanceOf(TraceContext::class, $context);
+//        $this->assertEquals(self::TEST_TRACE_ID, $context->getTraceId());
+//        $this->assertEquals(self::TEST_SPAN_ID, $context->getSpanId());
+//        $this->assertEquals(self::TEST_PARENT_ID, $context->getParentId());
+//    }
 
     public function carrierProvider()
     {

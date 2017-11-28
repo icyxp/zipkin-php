@@ -109,19 +109,19 @@ final class TraceContextTest extends PHPUnit_Framework_TestCase
     /**
      * @dataProvider boolProvider
      */
-    public function testCreateFailsDueToInvalidParentSpanId($sampled, $debug)
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid parent span id, got invalid_bd7a977555f6b982');
-
-        TraceContext::create(
-            self::TEST_TRACE_ID,
-            self::TEST_SPAN_ID,
-            self::TEST_INVALID_PARENT_ID,
-            $sampled,
-            $debug
-        );
-    }
+//    public function testCreateFailsDueToInvalidParentSpanId($sampled, $debug)
+//    {
+//        $this->expectException(InvalidArgumentException::class);
+//        $this->expectExceptionMessage('Invalid parent span id, got invalid_bd7a977555f6b982');
+//
+//        TraceContext::create(
+//            self::TEST_TRACE_ID,
+//            self::TEST_SPAN_ID,
+//            self::TEST_INVALID_PARENT_ID,
+//            $sampled,
+//            $debug
+//        );
+//    }
 
     public function boolProvider()
     {
