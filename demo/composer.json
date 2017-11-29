@@ -1,0 +1,21 @@
+{
+    "name": "zipkin-php-example",
+    "require": {
+        "monolog/monolog": "^1.23",
+        "guzzlehttp/guzzle": "^6.3",
+        "icyboy/zipkin": "~1.0",
+        "symfony/http-foundation": "3.4.x-dev"
+    },
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "icyboy",
+            "email": "icyboy@me.com"
+        }
+    ],
+    "scripts": {
+        "run-frontend": "php -S '127.0.0.1:8081' frontend.php",
+        "run-backend": "php -S '127.0.0.1:9000' backend.php",
+        "run-zipkin": "docker run -p 9411:9411 -d openzipkin/zipkin"
+    }
+}
