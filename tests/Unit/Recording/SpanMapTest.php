@@ -7,11 +7,8 @@ use Zipkin\Endpoint;
 use Zipkin\Propagation\DefaultSamplingFlags;
 use Zipkin\Recording\Span;
 use Zipkin\Recording\SpanMap;
-use Zipkin\TraceContext;
+use Zipkin\Propagation\TraceContext;
 
-/**
- * @covers SpanMap
- */
 final class SpanMapTest extends PHPUnit_Framework_TestCase
 {
     public function testCreateASpanMapSuccess()
